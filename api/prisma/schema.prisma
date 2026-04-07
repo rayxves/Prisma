@@ -4,6 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 enum PlanAssinatura {
@@ -18,123 +19,140 @@ enum UserRole {
 }
 
 enum UploadStatus {
-  PENDENTE
-  PROCESSADO
-  ERRO
+  PENDING
+  PROCESSING
+  AWAITING_MAPPING
+  DONE
+  ERROR
 }
 
 model Tenant {
-  id               String         @id @default(uuid())
-  nome_fantasia    String
-  cnpj             String         @unique
-  plano_assinatura PlanAssinatura @default(FREE)
-  created_at       DateTime       @default(now())
-
-  users         User[]
-  branches      Branch[]
-  sales         Sale[]
-  raw_uploads   RawUpload[]
-  audit_logs    AuditLog[]
-  daily_metrics DailyMetrics[]
+  id           String         @id @default(uuid())
+  name         String
+  cnpj         String         @unique
+  plan         PlanAssinatura @default(FREE)
+  createdAt    DateTime       @default(now()) @map("created_at")
+  users        User[]
+  branches     Branch[]
+  sales        Sale[]
+  rawUploads   RawUpload[]
+  auditLogs    AuditLog[]
+  dailyMetrics DailyMetrics[]
+  anomalies    Anomaly[]
 
   @@map("tenants")
 }
 
 model User {
-  id         String   @id @default(uuid())
-  nome       String
+  id         String    @id @default(uuid())
+  name       String
   email      String
-  senha_hash String
-  role       UserRole @default(EDITOR)
-  tenant_id  String
-  created_at DateTime @default(now())
+  password   String    @map("senha_hash")
+  role       UserRole  @default(EDITOR)
+  tenantId   String    @map("tenant_id")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  rawUploads RawUpload[]
+  auditLogs  AuditLog[]
 
-  tenant      Tenant      @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  raw_uploads RawUpload[]
-  audit_logs  AuditLog[]
-
-  @@unique([email, tenant_id])
+  @@unique([email, tenantId])
   @@map("users")
 }
 
 model Branch {
-  id          String  @id @default(uuid())
-  nome        String
-  cidade      String
-  estado      String
-  meta_mensal Decimal @db.Decimal(15, 2)
-  tenant_id   String
-
-  tenant        Tenant         @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  sales         Sale[]
-  daily_metrics DailyMetrics[]
+  id           String         @id @default(uuid())
+  name         String         @map("nome")
+  city         String         @map("cidade")
+  state        String         @map("estado")
+  monthlyGoal  Decimal        @map("meta_mensal") @db.Decimal(15, 2)
+  tenantId     String         @map("tenant_id")
+  tenant       Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sales        Sale[]
+  dailyMetrics DailyMetrics[]
+  anomalies    Anomaly[]
 
   @@map("branches")
 }
 
 model RawUpload {
-  id           String       @id @default(uuid())
-  nome_arquivo String
-  data_upload  DateTime     @default(now())
-  status       UploadStatus @default(PENDENTE)
-  user_id      String
-  tenant_id    String
-
-  user   User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  tenant Tenant @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  id               String       @id @default(uuid())
+  filename         String       @map("nome_arquivo")
+  originalName     String       @map("nome_arquivo_original")
+  status           UploadStatus @default(PENDING)
+  suggestedMapping Json?        @map("suggested_mapping")
+  mapping          Json?
+  userId           String       @map("user_id")
+  tenantId         String       @map("tenant_id")
+  createdAt        DateTime     @default(now()) @map("data_upload")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
+  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant           Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@map("raw_uploads")
 }
 
 model Sale {
-  id           String   @id @default(uuid())
-  external_id  String
-  data_venda   DateTime
-  valor_bruto  Decimal  @db.Decimal(15, 2)
-  custo_total  Decimal  @db.Decimal(15, 2)
-  categoria    String
-  produto_nome String
-  quantidade   Int
-  branch_id    String
-  tenant_id    String
+  id          String   @id @default(uuid())
+  externalId  String   @map("external_id")
+  saleDate    DateTime @map("data_venda")
+  grossValue  Decimal  @map("valor_bruto") @db.Decimal(15, 2)
+  totalCost   Decimal  @map("custo_total") @db.Decimal(15, 2)
+  category    String?  @map("categoria")
+  productName String   @map("produto_nome")
+  quantity    Int      @map("quantidade")
+  branchId    String   @map("branch_id")
+  tenantId    String   @map("tenant_id")
+  branch      Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  branch Branch @relation(fields: [branch_id], references: [id], onDelete: Cascade)
-  tenant Tenant @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-
-  @@unique([external_id, tenant_id])
-  @@index([tenant_id, data_venda])
-  @@index([branch_id, data_venda])
+  @@unique([externalId, tenantId])
+  @@index([tenantId, saleDate])
+  @@index([branchId, saleDate])
   @@map("sales")
 }
 
 model DailyMetrics {
-  id            String   @id @default(uuid())
-  data          DateTime @db.Date
-  total_vendas  Decimal  @db.Decimal(15, 2)
-  roi_dia       Decimal  @db.Decimal(10, 4)
-  margem_dia    Decimal  @db.Decimal(10, 4)
-  qtd_anomalias Int      @default(0)
-  branch_id     String
-  tenant_id     String
+  id             String   @id @default(uuid())
+  date           DateTime @map("data") @db.Date
+  totalSales     Decimal  @map("total_vendas") @db.Decimal(15, 2)
+  roiDay         Decimal  @map("roi_dia") @db.Decimal(10, 4)
+  marginDay      Decimal  @map("margem_dia") @db.Decimal(10, 4)
+  anomaliesCount Int      @default(0) @map("qtd_anomalias")
+  branchId       String   @map("branch_id")
+  tenantId       String   @map("tenant_id")
+  branch         Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  branch Branch @relation(fields: [branch_id], references: [id], onDelete: Cascade)
-  tenant Tenant @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-
-  @@unique([data, branch_id])
-  @@index([tenant_id, data])
+  @@unique([date, branchId])
+  @@index([tenantId, date])
   @@map("daily_metrics")
+}
+
+model Anomaly {
+  id         String   @id @default(uuid())
+  saleDate   DateTime @map("sale_date")
+  detectedAt DateTime @default(now()) @map("detected_at")
+  deviation  Decimal  @map("desvio") @db.Decimal(8, 2)
+  hypothesis String?  @map("hipotese")
+  branchId   String   @map("branch_id")
+  tenantId   String   @map("tenant_id")
+  branch     Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, detectedAt])
+  @@index([tenantId, branchId])
+  @@map("anomalies")
 }
 
 model AuditLog {
   id        String   @id @default(uuid())
-  user_id   String
-  acao      String
+  action    String   @map("acao")
   timestamp DateTime @default(now())
-  tenant_id String
+  userId    String   @map("user_id")
+  tenantId  String   @map("tenant_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  user   User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  tenant Tenant @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-
-  @@index([tenant_id, timestamp])
+  @@index([tenantId, timestamp])
   @@map("audit_logs")
 }
