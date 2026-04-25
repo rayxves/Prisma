@@ -62,6 +62,6 @@ export async function getAnomalyById(tenantId: string, id: string) {
 
   return {
     ...anomaly,
-    crossedRoi: parseFloat(roi.toFixed(2)),
+    crossedRoi: Number.parseFloat(roi.toFixed(2)),
   };
 }

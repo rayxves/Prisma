@@ -71,7 +71,7 @@ export async function generatePdf(filters: ReportFilters, res: Response) {
   doc.moveDown(0.5);
   doc.fontSize(10).font('Helvetica');
   branchesRanking.forEach((b, i) => {
-    const goal = b.goalAchievement !== null ? ` | Meta: ${b.goalAchievement}%` : '';
+    const goal = b.goalAchievement === null ? '' : ` | Meta: ${b.goalAchievement}%`;
     doc.text(`${i + 1}. ${b.name} (${b.city}/${b.state}) — Faturamento: R$ ${b.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} | Margem: ${b.margin}%${goal}`);
   });
   doc.moveDown(1.5);

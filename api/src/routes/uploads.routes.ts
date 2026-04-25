@@ -1,4 +1,4 @@
-import path from 'path';
+import path from 'node:path';
 
 import { Router, Request } from 'express';
 import multer, { FileFilterCallback } from 'multer';

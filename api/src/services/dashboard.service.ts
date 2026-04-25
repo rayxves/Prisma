@@ -51,8 +51,8 @@ export async function getKpis({ tenantId, branchId, from, to }: DashboardFilters
     totalRevenue,
     totalCost,
     netProfit,
-    roi:           parseFloat(roi.toFixed(2)),
-    profitMargin:  parseFloat(profitMargin.toFixed(2)),
+    roi:           Number.parseFloat(roi.toFixed(2)),
+    profitMargin:  Number.parseFloat(profitMargin.toFixed(2)),
     totalSales:    sales._count.id,
     anomaliesCount,
   };
@@ -174,9 +174,9 @@ export async function getBranchesRanking({ tenantId, from, to }: DashboardFilter
         state:        branch.state,
         revenue,
         netProfit,
-        margin:          parseFloat(margin.toFixed(2)),
+        margin:          Number.parseFloat(margin.toFixed(2)),
         monthlyGoal:     goal,
-        goalAchievement: goalAchievement !== null ? parseFloat(goalAchievement.toFixed(2)) : null,
+        goalAchievement: goalAchievement === null ? null : Number.parseFloat(goalAchievement.toFixed(2)),
       };
     })
     .sort((a, b) => b.revenue - a.revenue);
@@ -241,13 +241,13 @@ export async function getProjection({ tenantId, branchId }: DashboardFilters) {
 
   const goalAchievement =
     monthlyGoal && monthlyGoal > 0
-      ? parseFloat(((projected / monthlyGoal) * 100).toFixed(2))
+      ? Number.parseFloat(((projected / monthlyGoal) * 100).toFixed(2))
       : null;
 
   return {
-    currentTotal:    parseFloat(currentTotal.toFixed(2)),
-    projectedMin:    parseFloat(projectedMin.toFixed(2)),
-    projectedMax:    parseFloat(projectedMax.toFixed(2)),
+    currentTotal:    Number.parseFloat(currentTotal.toFixed(2)),
+    projectedMin:    Number.parseFloat(projectedMin.toFixed(2)),
+    projectedMax:    Number.parseFloat(projectedMax.toFixed(2)),
     daysElapsed:     today,
     daysInMonth,
     monthlyGoal,

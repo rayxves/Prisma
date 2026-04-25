@@ -20,8 +20,8 @@ export function levenshtein(a: string, b: string): number {
 }
 
 export function similarity(a: string, b: string): number {
-  const norm  = a.toLowerCase().replace(/[^a-z0-9]/g, '');
-  const normB = b.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const norm  = a.toLowerCase().replaceAll(/[^a-z0-9]/g, '');
+  const normB = b.toLowerCase().replaceAll(/[^a-z0-9]/g, '');
   const dist  = levenshtein(norm, normB);
   return 1 - dist / Math.max(norm.length, normB.length, 1);
 }
