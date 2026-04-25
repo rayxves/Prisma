@@ -1,10 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
+
 import jwt from 'jsonwebtoken';
 
+import { env } from '../config/env';
+
 export interface AuthPayload {
-  userId: string;
+  userId:   string;
   tenantId: string;
-  role: string;
+  role:     string;
 }
 
 declare global {
@@ -15,18 +18,23 @@ declare global {
   }
 }
 
-export function authMiddleware(req: Request, res: Response, next: NextFunction) {
+export function authMiddleware(req: Request, res: Response, next: NextFunction): void {
   const token = req.headers.authorization?.split(' ')[1];
 
   if (!token) {
-    return res.status(401).json({ error: 'Token não fornecido' });
+    res.status(401).json({ error: 'Token não fornecido' });
+    return;
   }
 
   try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET!) as AuthPayload;
+    const payload = jwt.verify(token, env.JWT_SECRET) as AuthPayload;
     req.user = payload;
     next();
-  } catch {
-    return res.status(401).json({ error: 'Token inválido ou expirado' });
+  } catch (err) {
+    if (err instanceof jwt.TokenExpiredError) {
+      res.status(401).json({ error: 'Token expirado', code: 'TOKEN_EXPIRED' });
+    } else {
+      res.status(403).json({ error: 'Token inválido', code: 'TOKEN_INVALID' });
+    }
   }
 }

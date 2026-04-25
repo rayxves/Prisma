@@ -1,10 +1,19 @@
 import { z } from "zod";
 
-export const dailyMetricsFiltersSchema = z.object({
-	branch_id: z.uuid().optional(),
-	data_inicio: z.coerce.date().optional(),
-	data_fim: z.coerce.date().optional(),
-});
+export const dailyMetricsFiltersSchema = z
+	.object({
+		branch_id: z.uuid().optional(),
+		data_inicio: z.coerce.date().optional(),
+		data_fim: z.coerce.date().optional(),
+	})
+	.refine(
+		({ data_inicio, data_fim }) =>
+			!data_inicio || !data_fim || data_fim >= data_inicio,
+		{
+			message: "data_fim deve ser posterior ou igual a data_inicio",
+			path: ["data_fim"],
+		},
+	);
 
 export const upsertDailyMetricsSchema = z.object({
 	data: z.coerce.date(),

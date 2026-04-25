@@ -1,57 +1,47 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
+
 import * as DashboardService from '../services/dashboard.service';
 
+const TOP_PRODUCTS_MAX_LIMIT = 200;
+
 function parseFilters(req: Request) {
-  const { branchId, from, to } = req.query as Record<string, string>;
+  const { branchId, from, to } = req.query as Record<string, string | undefined>;
   return {
     tenantId: req.user!.tenantId,
-    branchId: branchId || undefined,
-    from:     from ? new Date(from) : undefined,
-    to:       to   ? new Date(to)   : undefined,
+    ...(branchId ? { branchId } : undefined),
+    ...(from     ? { from: new Date(from) } : undefined),
+    ...(to       ? { to:   new Date(to)   } : undefined),
   };
 }
 
-export async function kpis(req: Request, res: Response) {
+export async function kpis(req: Request, res: Response, next: NextFunction) {
   try {
-    const result = await DashboardService.getKpis(parseFilters(req));
-    res.json(result);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
+    res.json(await DashboardService.getKpis(parseFilters(req)));
+  } catch (err) { next(err); }
 }
 
-export async function salesTimeline(req: Request, res: Response) {
+export async function salesTimeline(req: Request, res: Response, next: NextFunction) {
   try {
-    const result = await DashboardService.getSalesTimeline(parseFilters(req));
-    res.json(result);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
+    res.json(await DashboardService.getSalesTimeline(parseFilters(req)));
+  } catch (err) { next(err); }
 }
 
-export async function topProducts(req: Request, res: Response) {
+export async function topProducts(req: Request, res: Response, next: NextFunction) {
   try {
-    const result = await DashboardService.getTopProducts(parseFilters(req));
-    res.json(result);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
+    const rawLimit = Number((req.query as Record<string, string | undefined>)['limit'] ?? 50);
+    const limit    = Math.min(Math.max(1, rawLimit), TOP_PRODUCTS_MAX_LIMIT);
+    res.json(await DashboardService.getTopProducts(parseFilters(req), limit));
+  } catch (err) { next(err); }
 }
 
-export async function branchesRanking(req: Request, res: Response) {
+export async function branchesRanking(req: Request, res: Response, next: NextFunction) {
   try {
-    const result = await DashboardService.getBranchesRanking(parseFilters(req));
-    res.json(result);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
+    res.json(await DashboardService.getBranchesRanking(parseFilters(req)));
+  } catch (err) { next(err); }
 }
 
-export async function projection(req: Request, res: Response) {
+export async function projection(req: Request, res: Response, next: NextFunction) {
   try {
-    const result = await DashboardService.getProjection(parseFilters(req));
-    res.json(result);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
+    res.json(await DashboardService.getProjection(parseFilters(req)));
+  } catch (err) { next(err); }
 }

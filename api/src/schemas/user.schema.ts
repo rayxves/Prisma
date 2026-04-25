@@ -1,34 +1,41 @@
 import { z } from "zod";
-import { UserRole } from "../types/enums.js";
+import { passwordSchema } from "./auth.schema";
 
 export const createUserSchema = z.object({
-	nome: z.string().min(2).max(100),
-	email: z.email(),
-	senha: z.string().min(8).max(72),
-	role: z.enum(UserRole).default(UserRole.EDITOR),
+	name: z
+		.string()
+		.transform((v) => v.trim())
+		.pipe(z.string().min(2, "Nome muito curto").max(100)),
+	email: z.email("E-mail inválido").transform((v) => v.toLowerCase().trim()),
+	password: passwordSchema,
+	role: z.enum(["ADMIN", "EDITOR"] as const).default("EDITOR"),
 });
 
 export const updateUserSchema = createUserSchema
 	.partial()
-	.omit({ senha: true });
+	.omit({ password: true })
+	.refine((data) => Object.values(data).some((v) => v !== undefined), {
+		message: "Ao menos um campo deve ser fornecido",
+	});
 
 export const changePasswordSchema = z
 	.object({
-		senha_atual: z.string().min(8),
-		nova_senha: z.string().min(8).max(72),
-		confirmar_senha: z.string().min(8).max(72),
+		currentPassword: z.string().min(1, "Senha atual obrigatória"),
+		newPassword: passwordSchema,
+		confirmPassword: z.string(),
 	})
-	.refine((data) => data.nova_senha === data.confirmar_senha, {
-		message: "As senhas não coincidem",
-		path: ["confirmar_senha"],
-	});
-
-export const loginSchema = z.object({
-	email: z.email(),
-	senha: z.string().min(1),
-});
+	.refine(
+		({ newPassword, confirmPassword }) => newPassword === confirmPassword,
+		{ message: "As senhas não coincidem", path: ["confirmPassword"] },
+	)
+	.refine(
+		({ currentPassword, newPassword }) => newPassword !== currentPassword,
+		{
+			message: "A nova senha deve ser diferente da atual",
+			path: ["newPassword"],
+		},
+	);
 
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
-export type LoginInput = z.infer<typeof loginSchema>;

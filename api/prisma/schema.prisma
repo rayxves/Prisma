@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 enum PlanAssinatura {
@@ -28,10 +27,11 @@ enum UploadStatus {
 
 model Tenant {
   id           String         @id @default(uuid())
-  name         String
+  name         String         @map("nome_fantasia")
   cnpj         String         @unique
-  plan         PlanAssinatura @default(FREE)
+  plan         PlanAssinatura @default(FREE) @map("plano_assinatura")
   createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
   users        User[]
   branches     Branch[]
   sales        Sale[]
@@ -44,14 +44,14 @@ model Tenant {
 }
 
 model User {
-  id         String    @id @default(uuid())
-  name       String
+  id         String      @id @default(uuid())
+  name       String      @map("nome")
   email      String
-  password   String    @map("senha_hash")
-  role       UserRole  @default(EDITOR)
-  tenantId   String    @map("tenant_id")
-  createdAt  DateTime  @default(now()) @map("created_at")
-  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  password   String      @map("senha_hash")
+  role       UserRole    @default(EDITOR)
+  tenantId   String      @map("tenant_id")
+  createdAt  DateTime    @default(now()) @map("created_at")
+  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   rawUploads RawUpload[]
   auditLogs  AuditLog[]
 
@@ -65,11 +65,13 @@ model Branch {
   city         String         @map("cidade")
   state        String         @map("estado")
   monthlyGoal  Decimal        @map("meta_mensal") @db.Decimal(15, 2)
+  createdAt    DateTime       @default(now()) @map("created_at")
   tenantId     String         @map("tenant_id")
   tenant       Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   sales        Sale[]
   dailyMetrics DailyMetrics[]
   anomalies    Anomaly[]
+  rawUploads   RawUpload[]
 
   @@map("branches")
 }
@@ -81,12 +83,15 @@ model RawUpload {
   status           UploadStatus @default(PENDING)
   suggestedMapping Json?        @map("suggested_mapping")
   mapping          Json?
+  errorMessage     String?      @map("error_message")
+  branchId         String?      @map("branch_id")
   userId           String       @map("user_id")
   tenantId         String       @map("tenant_id")
   createdAt        DateTime     @default(now()) @map("data_upload")
   updatedAt        DateTime     @updatedAt @map("updated_at")
   user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   tenant           Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch           Branch?      @relation(fields: [branchId], references: [id], onDelete: SetNull)
 
   @@map("raw_uploads")
 }
@@ -108,6 +113,7 @@ model Sale {
   @@unique([externalId, tenantId])
   @@index([tenantId, saleDate])
   @@index([branchId, saleDate])
+  @@index([productName])
   @@map("sales")
 }
 
@@ -125,6 +131,7 @@ model DailyMetrics {
 
   @@unique([date, branchId])
   @@index([tenantId, date])
+  @@index([branchId, date])
   @@map("daily_metrics")
 }
 

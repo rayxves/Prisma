@@ -6,7 +6,6 @@ const router = Router();
 
 router.use(authMiddleware);
 
-// Todos os endpoints aceitam ?branchId=&from=YYYY-MM-DD&to=YYYY-MM-DD como query params
 router.get('/kpis',             DashboardController.kpis);
 router.get('/sales-timeline',   DashboardController.salesTimeline);
 router.get('/top-products',     DashboardController.topProducts);

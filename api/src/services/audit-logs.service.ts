@@ -1,7 +1,5 @@
 import { prisma } from '../lib/prisma';
 
-// ─── List Audit Logs ──────────────────────────────────────────────────────────
-// Retorna ações registradas do tenant com paginação
 export async function listAuditLogs(
   tenantId: string,
   filters: { userId?: string; from?: Date; to?: Date; page?: number; limit?: number }
@@ -48,7 +46,6 @@ export async function listAuditLogs(
   };
 }
 
-// ─── Helper: registrar ação (chamado internamente pelos outros services) ───────
 export async function logAction(tenantId: string, userId: string, action: string) {
   return prisma.auditLog.create({
     data: { tenantId, userId, action },

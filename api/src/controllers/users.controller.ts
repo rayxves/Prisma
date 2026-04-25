@@ -1,64 +1,58 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
+
 import * as UsersService from '../services/users.service';
 
-export async function list(req: Request, res: Response) {
+export async function list(req: Request, res: Response, next: NextFunction) {
   try {
     const users = await UsersService.listUsers(req.user!.tenantId);
     res.json(users);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { next(err); }
 }
 
-export async function create(req: Request, res: Response) {
+export async function create(req: Request, res: Response, next: NextFunction) {
   try {
-    const user = await UsersService.createUser(req.user!.tenantId, req.body);
+    const user = await UsersService.createUser(req.user!.tenantId, req.user!.userId, req.body);
     res.status(201).json(user);
-  } catch (err: any) {
-    res.status(400).json({ error: err.message });
-  }
+  } catch (err) { next(err); }
 }
 
-export async function getById(req: Request, res: Response) {
+export async function getById(req: Request, res: Response, next: NextFunction) {
   try {
-    const user = await UsersService.getUserById(req.user!.tenantId, req.params.id);
+    const user = await UsersService.getUserById(req.user!.tenantId, req.params['id'] as string);
     res.json(user);
-  } catch (err: any) {
-    res.status(404).json({ error: err.message });
-  }
+  } catch (err) { next(err); }
 }
 
-export async function update(req: Request, res: Response) {
+export async function update(req: Request, res: Response, next: NextFunction) {
   try {
-    const user = await UsersService.updateUser(req.user!.tenantId, req.params.id, req.body);
+    const user = await UsersService.updateUser(
+      req.user!.tenantId,
+      req.params['id'] as string,
+      req.user!.userId,
+      req.body,
+    );
     res.json(user);
-  } catch (err: any) {
-    res.status(400).json({ error: err.message });
-  }
+  } catch (err) { next(err); }
 }
 
-export async function remove(req: Request, res: Response) {
+export async function remove(req: Request, res: Response, next: NextFunction) {
   try {
-    await UsersService.deleteUser(req.user!.tenantId, req.params.id);
+    await UsersService.deleteUser(req.user!.tenantId, req.params['id'] as string, req.user!.userId);
     res.status(204).send();
-  } catch (err: any) {
-    res.status(404).json({ error: err.message });
-  }
+  } catch (err) { next(err); }
 }
 
-export async function updatePassword(req: Request, res: Response) {
+export async function updatePassword(req: Request, res: Response, next: NextFunction) {
   try {
-    const { currentPassword, newPassword } = req.body;
+    const { currentPassword, newPassword } = req.body as { currentPassword: string; newPassword: string };
     await UsersService.updatePassword(
       req.user!.tenantId,
-      req.params.id,
+      req.params['id'] as string,
       req.user!.userId,
       req.user!.role,
       currentPassword,
-      newPassword
+      newPassword,
     );
     res.json({ message: 'Senha atualizada com sucesso' });
-  } catch (err: any) {
-    res.status(400).json({ error: err.message });
-  }
+  } catch (err) { next(err); }
 }

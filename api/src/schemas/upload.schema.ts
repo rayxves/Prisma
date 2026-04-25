@@ -1,23 +1,23 @@
 import { z } from "zod";
-import { UploadStatus } from "../types/enums.js";
 
-export const updateUploadStatusSchema = z.object({
-	status: z.enum(UploadStatus),
+const REQUIRED_MAPPING_FIELDS = [
+	"data_venda",
+	"valor_bruto",
+	"custo_total",
+	"produto_nome",
+	"quantidade",
+] as const;
+
+export const confirmMappingSchema = z.object({
+	mapping: z
+		.record(z.string(), z.string())
+		.refine(
+			(m) => REQUIRED_MAPPING_FIELDS.every((field) => Boolean(m[field])),
+			{
+				message: `Mapeamento deve incluir: ${REQUIRED_MAPPING_FIELDS.join(", ")}`,
+			},
+		),
+	branchId: z.uuid("branchId deve ser um UUID válido"),
 });
 
-export const columnMappingSchema = z.object({
-	upload_id: z.uuid(),
-	mapeamento: z.object({
-		data_venda: z.string(),
-		valor_bruto: z.string(),
-		custo_total: z.string(),
-		categoria: z.string(),
-		produto_nome: z.string(),
-		quantidade: z.string(),
-		external_id: z.string().optional(),
-	}),
-	branch_id: z.uuid(),
-});
-
-export type UpdateUploadStatusInput = z.infer<typeof updateUploadStatusSchema>;
-export type ColumnMappingInput = z.infer<typeof columnMappingSchema>;
+export type ConfirmMappingInput = z.infer<typeof confirmMappingSchema>;
