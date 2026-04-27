@@ -1,1 +1,1 @@
-export { PlanAssinatura, UserRole, UploadStatus } from '@prisma/client';
+export { PlanAssinatura, UserRole, UploadStatus } from "@prisma/client";
