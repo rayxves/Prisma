@@ -6,7 +6,6 @@ const router = Router();
 
 router.use(authMiddleware);
 
-// ?branchId=&from=YYYY-MM-DD&to=YYYY-MM-DD
 router.get('/daily', MetricsController.daily);
 
 export default router;

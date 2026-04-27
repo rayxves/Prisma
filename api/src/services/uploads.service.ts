@@ -1,96 +1,93 @@
 import { Queue } from 'bullmq';
-import { prisma } from '../lib/prisma';
 
-// ─── Queue ────────────────────────────────────────────────────────────────────
-// Certifique-se de ter REDIS_HOST e REDIS_PORT no .env
+import { env } from '../config/env';
+import { prisma } from '../lib/prisma';
+import { NotFoundError, ValidationError } from '../shared/errors/app-error';
+
 const uploadQueue = new Queue('uploads', {
-  connection: {
-    host: process.env.REDIS_HOST ?? 'localhost',
-    port: Number(process.env.REDIS_PORT ?? 6379),
-  },
+  connection: { host: env.REDIS_HOST, port: env.REDIS_PORT },
 });
 
-// ─── Create Upload ────────────────────────────────────────────────────────────
-// Salva o registro no banco com status PENDING e enfileira o job de processamento
 export async function createUpload(
-  tenantId: string,
-  userId: string,
-  filename: string,
-  originalName: string
+  tenantId:     string,
+  userId:       string,
+  filename:     string,
+  originalName: string,
 ) {
   const upload = await prisma.rawUpload.create({
     data: { tenantId, userId, filename, originalName, status: 'PENDING' },
   });
 
-  // O worker vai ler o arquivo, detectar colunas e gerar suggestedMapping
-  await uploadQueue.add(
-    'process-upload',
-    { uploadId: upload.id, tenantId },
-    { jobId: upload.id, attempts: 3, backoff: { type: 'exponential', delay: 3000 } }
-  );
+  try {
+    await uploadQueue.add(
+      'process-upload',
+      { uploadId: upload.id, tenantId },
+      { jobId: upload.id, attempts: 3, backoff: { type: 'exponential', delay: 3000 } },
+    );
+  } catch (err) {
+    await prisma.rawUpload.update({
+      where: { id: upload.id },
+      data:  { status: 'ERROR', errorMessage: 'Falha ao enfileirar processamento' },
+    });
+    throw err;
+  }
 
   return upload;
 }
 
-// ─── List Uploads ─────────────────────────────────────────────────────────────
 export async function listUploads(tenantId: string) {
   return prisma.rawUpload.findMany({
-    where: { tenantId },
+    where:   { tenantId },
     orderBy: { createdAt: 'desc' },
-    select: { id: true, originalName: true, status: true, createdAt: true, updatedAt: true },
+    select:  { id: true, originalName: true, status: true, createdAt: true, updatedAt: true, errorMessage: true },
   });
 }
 
-// ─── Get Upload by ID ─────────────────────────────────────────────────────────
 export async function getUploadById(tenantId: string, id: string) {
   const upload = await prisma.rawUpload.findFirst({ where: { id, tenantId } });
-  if (!upload) throw new Error('Upload não encontrado');
+  if (!upload) throw new NotFoundError('Upload não encontrado');
   return upload;
 }
 
-// ─── Get Column Mapping ───────────────────────────────────────────────────────
-// O worker já executou fuzzy matching e armazenou as sugestões em `suggestedMapping`
 export async function getColumnMapping(tenantId: string, id: string) {
   const upload = await prisma.rawUpload.findFirst({ where: { id, tenantId } });
-  if (!upload) throw new Error('Upload não encontrado');
+  if (!upload) throw new NotFoundError('Upload não encontrado');
 
   const readyStatuses = ['AWAITING_MAPPING', 'DONE'];
   if (!readyStatuses.includes(upload.status)) {
-    throw new Error(`Upload ainda não está pronto para mapeamento. Status atual: ${upload.status}`);
+    throw new ValidationError(`Upload ainda não está pronto para mapeamento. Status atual: ${upload.status}`);
   }
 
   return {
-    uploadId: upload.id,
-    originalName: upload.originalName,
-    suggestedMapping: upload.suggestedMapping, // Json salvo pelo worker
+    uploadId:         upload.id,
+    originalName:     upload.originalName,
+    suggestedMapping: upload.suggestedMapping,
   };
 }
 
-// ─── Confirm Mapping ──────────────────────────────────────────────────────────
-// Recebe o mapeamento confirmado pelo usuário e dispara a inserção real no banco
 export async function confirmMapping(
-  tenantId: string,
-  id: string,
-  mapping: Record<string, string>
+  tenantId:  string,
+  id:        string,
+  mapping:   Record<string, string>,
+  branchId:  string,
 ) {
   const upload = await prisma.rawUpload.findFirst({ where: { id, tenantId } });
-  if (!upload) throw new Error('Upload não encontrado');
+  if (!upload) throw new NotFoundError('Upload não encontrado');
 
   if (upload.status !== 'AWAITING_MAPPING') {
-    throw new Error('Este upload não está aguardando mapeamento');
+    throw new ValidationError('Este upload não está aguardando mapeamento');
   }
+
+  await uploadQueue.add(
+    'insert-data',
+    { uploadId: id, tenantId, mapping, branchId },
+    { jobId: `insert-${id}`, attempts: 3, backoff: { type: 'exponential', delay: 5000 } },
+  );
 
   await prisma.rawUpload.update({
     where: { id },
-    data: { mapping, status: 'PROCESSING' },
+    data:  { mapping, branchId, status: 'PROCESSING' },
   });
-
-  // Job separado para inserção — usa jobId único para evitar duplicatas
-  await uploadQueue.add(
-    'insert-data',
-    { uploadId: id, tenantId, mapping },
-    { jobId: `insert-${id}`, attempts: 3, backoff: { type: 'exponential', delay: 5000 } }
-  );
 
   return { message: 'Mapeamento confirmado. Inserção dos dados iniciada.' };
 }

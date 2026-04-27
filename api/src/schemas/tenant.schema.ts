@@ -1,15 +1,16 @@
 import { z } from "zod";
-import { PlanAssinatura } from "../types/enums.js";
 
-export const createTenantSchema = z.object({
-	nome_fantasia: z.string().min(2).max(150),
-	cnpj: z.string().regex(/^\d{14}$/, "CNPJ deve conter 14 dígitos numéricos"),
-	plano_assinatura: z.enum(PlanAssinatura).default(PlanAssinatura.FREE),
-});
+export const updateTenantSchema = z
+	.object({
+		name: z
+			.string()
+			.transform((v) => v.trim())
+			.pipe(z.string().min(2, "Nome precisa ter no mínimo 2 caracteres").max(150))
+			.optional(),
+		plan: z.enum(["FREE", "PRO", "ENTERPRISE"] as const).optional(),
+	})
+	.refine((data) => data.name !== undefined || data.plan !== undefined, {
+		message: "Ao menos um campo deve ser fornecido",
+	});
 
-export const updateTenantSchema = createTenantSchema.partial().omit({
-	cnpj: true,
-});
-
-export type CreateTenantInput = z.infer<typeof createTenantSchema>;
 export type UpdateTenantInput = z.infer<typeof updateTenantSchema>;

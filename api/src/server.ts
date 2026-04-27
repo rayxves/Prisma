@@ -1,38 +1,51 @@
-/**
- * server.ts — Ponto de entrada da aplicação
- *
- * Inicia:
- *  1. API REST Express (porta configurável via PORT)
- *  2. Worker BullMQ da engine de diagnóstico/predição
- *
- * Em produção, o worker pode ser movido para um processo separado
- * (ex: `worker.ts` standalone) escalonando de forma independente.
- */
+import fs from "node:fs";
 
-import "dotenv/config";
 import app from "./app";
-import { startUploadWorker } from "./workers/upload.worker";
+import { env } from "./config/env";
+import { logger } from "./config/logger";
+import { redis } from "./config/redis";
+import { prisma } from "./lib/prisma";
+import { closeWorkers, startWorkers } from "./workers/index";
 
-const PORT = process.env["PORT"] ?? 3001;
+async function bootstrap() {
+  fs.mkdirSync(env.UPLOAD_DIR, { recursive: true });
 
-// ── API HTTP ──────────────────────────────────────────────────────────────────
-const server = app.listen(PORT, () => {
-  console.log(`🚀 Prisma API rodando em http://localhost:${PORT}`);
-});
+  try {
+    await prisma.$connect();
+    logger.info("Banco de dados conectado");
+  } catch (err) {
+    logger.error("Falha ao conectar ao banco de dados", { err });
+    process.exit(1);
+  }
 
-// ── Engine Worker (BullMQ) ────────────────────────────────────────────────────
-const worker = startUploadWorker();
-console.log("⚙️  Engine de diagnóstico e predição iniciada.");
+  startWorkers();
 
-// ── Graceful Shutdown ────────────────────────────────────────────────────────
-async function shutdown(signal: string) {
-  console.log(`\n${signal} recebido — encerrando graciosamente...`);
-  await worker.close();
-  server.close(() => {
-    console.log("Servidor HTTP encerrado.");
-    process.exit(0);
+  const server = app.listen(env.PORT, () => {
+    logger.info(`Prisma API rodando em http://localhost:${env.PORT}`);
   });
+
+  async function shutdown(signal: string) {
+    logger.info(`${signal} recebido, encerrando servidor...`);
+
+    server.close(async () => {
+      logger.info("Servidor HTTP fechado");
+
+      await closeWorkers();
+      await prisma.$disconnect();
+      redis.disconnect();
+
+      logger.info("Encerramento concluido");
+      process.exit(0);
+    });
+
+    setTimeout(() => {
+      logger.error("Timeout de encerramento atingido, forcando saida");
+      process.exit(1);
+    }, 30_000);
+  }
+
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT"));
 }
 
-process.on("SIGTERM", () => shutdown("SIGTERM"));
-process.on("SIGINT", () => shutdown("SIGINT"));
+void bootstrap();

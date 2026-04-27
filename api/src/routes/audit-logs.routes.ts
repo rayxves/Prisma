@@ -7,7 +7,6 @@ const router = Router();
 
 router.use(authMiddleware);
 
-// ?userId=&from=YYYY-MM-DD&to=YYYY-MM-DD&page=1&limit=50
 router.get('/', adminMiddleware, AuditLogsController.list);
 
 export default router;

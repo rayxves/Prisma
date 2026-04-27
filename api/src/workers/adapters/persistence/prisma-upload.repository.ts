@@ -2,6 +2,7 @@ import type {
   BoostedModel,
   SalesProjection,
 } from "../../../engine/core/ml/sales-forecasting";
+import type { Prisma } from "@prisma/client";
 import type { SuggestedMapping } from "../../../engine/core/mapping/suggested-mapping-builder";
 import type {
   UploadRecord,
@@ -50,7 +51,7 @@ export function createPrismaUploadRepository(): UploadRepository {
         where: { id: uploadId },
         data: {
           status: "AWAITING_MAPPING",
-          suggestedMapping: suggestedMapping,
+          suggestedMapping: suggestedMapping as Prisma.InputJsonValue,
         },
       });
     },
@@ -75,7 +76,7 @@ export function createPrismaUploadRepository(): UploadRepository {
       await prisma.rawUpload.update({
         where: { id: uploadId },
         data: {
-          mapping: modelMetadata,
+          mapping: modelMetadata as Prisma.InputJsonValue,
         },
       });
     },

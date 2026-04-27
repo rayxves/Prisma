@@ -1,4 +1,5 @@
 import { prisma } from '../lib/prisma';
+import { NotFoundError } from '../shared/errors/app-error';
 
 export async function listAnomalies(
   tenantId: string,
@@ -39,7 +40,7 @@ export async function getAnomalyById(tenantId: string, id: string) {
       branch: { select: { name: true, city: true, state: true, monthlyGoal: true } },
     },
   });
-  if (!anomaly) throw new Error('Anomalia não encontrada');
+  if (!anomaly) throw new NotFoundError('Anomalia não encontrada');
 
   const saleDate   = anomaly.saleDate;
   const dayStart   = new Date(saleDate);
@@ -61,6 +62,6 @@ export async function getAnomalyById(tenantId: string, id: string) {
 
   return {
     ...anomaly,
-    crossedRoi: parseFloat(roi.toFixed(2)),
+    crossedRoi: Number.parseFloat(roi.toFixed(2)),
   };
 }
