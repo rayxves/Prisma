@@ -134,6 +134,7 @@ model Anomaly {
   detectedAt DateTime @default(now()) @map("detected_at")
   deviation  Decimal  @map("desvio") @db.Decimal(8, 2)
   hypothesis String?  @map("hipotese")
+  isCritical Boolean  @default(false) @map("is_critical")
   branchId   String   @map("branch_id")
   tenantId   String   @map("tenant_id")
   branch     Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)

@@ -1,16 +1,18 @@
 export enum PlanAssinatura {
-	FREE = "FREE",
-	PRO = "PRO",
-	ENTERPRISE = "ENTERPRISE",
+  FREE = "FREE",
+  PRO = "PRO",
+  ENTERPRISE = "ENTERPRISE",
 }
 
 export enum UserRole {
-	ADMIN = "ADMIN",
-	EDITOR = "EDITOR",
+  ADMIN = "ADMIN",
+  EDITOR = "EDITOR",
 }
 
 export enum UploadStatus {
-	PENDENTE = "PENDENTE",
-	PROCESSADO = "PROCESSADO",
-	ERRO = "ERRO",
+  PENDING = "PENDING",
+  PROCESSING = "PROCESSING",
+  AWAITING_MAPPING = "AWAITING_MAPPING",
+  DONE = "DONE",
+  ERROR = "ERROR",
 }
