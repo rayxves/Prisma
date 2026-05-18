@@ -1,8 +1,8 @@
-import { prisma } from '../lib/prisma';
+import { prisma } from "../lib/prisma";
 
 export async function getDailyMetrics(
   tenantId: string,
-  filters: { branchId?: string; from?: Date; to?: Date }
+  filters: { branchId?: string; from?: Date; to?: Date },
 ) {
   const { branchId, from, to } = filters;
 
@@ -14,21 +14,21 @@ export async function getDailyMetrics(
         ? {
             date: {
               ...(from && { gte: from }),
-              ...(to   && { lte: to }),
+              ...(to && { lte: to }),
             },
           }
         : {}),
     },
     select: {
-      id:             true,
-      date:           true,
-      totalSales:     true,
-      roiDay:         true,
-      marginDay:      true,
+      id: true,
+      date: true,
+      totalSales: true,
+      roiDay: true,
+      marginDay: true,
       anomaliesCount: true,
-      branchId:       true,
+      branchId: true,
       branch: { select: { name: true } },
     },
-    orderBy: { date: 'asc' },
+    orderBy: { date: "asc" },
   });
 }
