@@ -1,8 +1,14 @@
-import { prisma } from '../lib/prisma';
+import { prisma } from "../lib/prisma";
 
 export async function listAuditLogs(
   tenantId: string,
-  filters: { userId?: string; from?: Date; to?: Date; page?: number; limit?: number }
+  filters: {
+    userId?: string;
+    from?: Date;
+    to?: Date;
+    page?: number;
+    limit?: number;
+  },
 ) {
   const { userId, from, to, page = 1, limit = 50 } = filters;
   const skip = (page - 1) * limit;
@@ -16,19 +22,19 @@ export async function listAuditLogs(
           ? {
               timestamp: {
                 ...(from && { gte: from }),
-                ...(to   && { lte: to }),
+                ...(to && { lte: to }),
               },
             }
           : {}),
       },
       select: {
-        id:        true,
-        action:    true,
+        id: true,
+        action: true,
         timestamp: true,
-        userId:    true,
+        userId: true,
         user: { select: { name: true, email: true } },
       },
-      orderBy: { timestamp: 'desc' },
+      orderBy: { timestamp: "desc" },
       skip,
       take: limit,
     }),
@@ -46,7 +52,11 @@ export async function listAuditLogs(
   };
 }
 
-export async function logAction(tenantId: string, userId: string, action: string) {
+export async function logAction(
+  tenantId: string,
+  userId: string,
+  action: string,
+) {
   return prisma.auditLog.create({
     data: { tenantId, userId, action },
   });

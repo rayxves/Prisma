@@ -62,7 +62,7 @@ export async function generatePdf(filters: ReportFilters, res: Response) {
   doc.fontSize(14).font('Helvetica-Bold').text('Produtos Âncora (Pareto 80/20)');
   doc.moveDown(0.5);
   doc.fontSize(10).font('Helvetica');
-  topProducts.products.filter((p) => p.isAnchor).slice(0, 20).forEach((p, i) => {
+  topProducts.products.filter((p: any) => p.isAnchor).slice(0, 20).forEach((p: any, i: number) => {
     doc.text(`${i + 1}. ${p.productName} — Lucro: R$ ${p.netProfit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} | Qtd: ${p.quantity}`);
   });
   doc.moveDown(1.5);
@@ -70,7 +70,7 @@ export async function generatePdf(filters: ReportFilters, res: Response) {
   doc.fontSize(14).font('Helvetica-Bold').text('Ranking de Filiais');
   doc.moveDown(0.5);
   doc.fontSize(10).font('Helvetica');
-  branchesRanking.forEach((b, i) => {
+  branchesRanking.forEach((b: any, i: number) => {
     const goal = b.goalAchievement === null ? '' : ` | Meta: ${b.goalAchievement}%`;
     doc.text(`${i + 1}. ${b.name} (${b.city}/${b.state}) — Faturamento: R$ ${b.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} | Margem: ${b.margin}%${goal}`);
   });
@@ -124,7 +124,7 @@ export async function generateExcel(filters: ReportFilters, res: Response) {
     { header: 'Quantidade',     key: 'quantity',    width: 14 },
     { header: 'Produto Âncora', key: 'isAnchor',    width: 16 },
   ];
-  topProducts.products.forEach((p) =>
+  topProducts.products.forEach((p: any) =>
     paretoSheet.addRow({ ...p, isAnchor: p.isAnchor ? 'Sim' : 'Não' }),
   );
 
@@ -139,7 +139,7 @@ export async function generateExcel(filters: ReportFilters, res: Response) {
     { header: 'Meta Mensal',     key: 'monthlyGoal',     width: 16 },
     { header: 'Atingimento (%)', key: 'goalAchievement', width: 16 },
   ];
-  branchesRanking.forEach((b) => branchSheet.addRow(b));
+  branchesRanking.forEach((b: any) => branchSheet.addRow(b));
 
   const anomSheet    = workbook.addWorksheet('Anomalias');
   anomSheet.columns  = [

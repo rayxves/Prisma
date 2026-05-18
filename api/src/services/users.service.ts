@@ -1,41 +1,50 @@
-import bcrypt from 'bcryptjs';
+import bcrypt from "bcryptjs";
 
-import { prisma } from '../lib/prisma';
-import { ConflictError, ForbiddenError, NotFoundError } from '../shared/errors/app-error';
-import { logAction } from './audit-logs.service';
+import { prisma } from "../lib/prisma";
+import {
+  ConflictError,
+  ForbiddenError,
+  NotFoundError,
+} from "../shared/errors/app-error";
+import { logAction } from "./audit-logs.service";
 
 const BCRYPT_ROUNDS = 10;
 
 const userSelect = {
-  id:        true,
-  name:      true,
-  email:     true,
-  role:      true,
+  id: true,
+  name: true,
+  email: true,
+  role: true,
   createdAt: true,
 } as const;
 
 export async function listUsers(tenantId: string) {
   return prisma.user.findMany({
-    where:   { tenantId },
-    select:  userSelect,
-    orderBy: { createdAt: 'desc' },
+    where: { tenantId },
+    select: userSelect,
+    orderBy: { createdAt: "desc" },
   });
 }
 
 export async function createUser(
-  tenantId:  string,
+  tenantId: string,
   requesterId: string,
-  data: { name: string; email: string; password: string; role: 'ADMIN' | 'EDITOR' },
+  data: {
+    name: string;
+    email: string;
+    password: string;
+    role: "ADMIN" | "EDITOR";
+  },
 ) {
   const existing = await prisma.user.findUnique({
     where: { email_tenantId: { email: data.email, tenantId } },
   });
-  if (existing) throw new ConflictError('E-mail já cadastrado nesta empresa');
+  if (existing) throw new ConflictError("E-mail já cadastrado nesta empresa");
 
   const hashed = await bcrypt.hash(data.password, BCRYPT_ROUNDS);
 
   const user = await prisma.user.create({
-    data:   { ...data, password: hashed, tenantId },
+    data: { ...data, password: hashed, tenantId },
     select: userSelect,
   });
 
@@ -45,31 +54,31 @@ export async function createUser(
 
 export async function getUserById(tenantId: string, id: string) {
   const user = await prisma.user.findFirst({
-    where:  { id, tenantId },
+    where: { id, tenantId },
     select: userSelect,
   });
-  if (!user) throw new NotFoundError('Usuário não encontrado');
+  if (!user) throw new NotFoundError("Usuário não encontrado");
   return user;
 }
 
 export async function updateUser(
-  tenantId:    string,
-  id:          string,
+  tenantId: string,
+  id: string,
   requesterId: string,
-  data: { name?: string; email?: string; role?: 'ADMIN' | 'EDITOR' },
+  data: { name?: string; email?: string; role?: "ADMIN" | "EDITOR" },
 ) {
   const user = await prisma.user.findFirst({ where: { id, tenantId } });
-  if (!user) throw new NotFoundError('Usuário não encontrado');
+  if (!user) throw new NotFoundError("Usuário não encontrado");
 
   if (data.email && data.email !== user.email) {
     const conflict = await prisma.user.findUnique({
       where: { email_tenantId: { email: data.email, tenantId } },
     });
-    if (conflict) throw new ConflictError('E-mail já está em uso');
+    if (conflict) throw new ConflictError("E-mail já está em uso");
   }
 
   const updated = await prisma.user.update({
-    where:  { id },
+    where: { id },
     data,
     select: userSelect,
   });
@@ -78,35 +87,46 @@ export async function updateUser(
   return updated;
 }
 
-export async function deleteUser(tenantId: string, id: string, requesterId: string) {
+export async function deleteUser(
+  tenantId: string,
+  id: string,
+  requesterId: string,
+) {
   const user = await prisma.user.findFirst({ where: { id, tenantId } });
-  if (!user) throw new NotFoundError('Usuário não encontrado');
+  if (!user) throw new NotFoundError("Usuário não encontrado");
 
   await prisma.user.delete({ where: { id } });
   await logAction(tenantId, requesterId, `DELETE_USER:${id}`);
 }
 
 export async function updatePassword(
-  tenantId:        string,
-  targetId:        string,
-  requesterId:     string,
-  requesterRole:   string,
+  tenantId: string,
+  targetId: string,
+  requesterId: string,
+  requesterRole: string,
   currentPassword: string,
-  newPassword:     string,
+  newPassword: string,
 ) {
-  const user = await prisma.user.findFirst({ where: { id: targetId, tenantId } });
-  if (!user) throw new NotFoundError('Usuário não encontrado');
+  const user = await prisma.user.findFirst({
+    where: { id: targetId, tenantId },
+  });
+  if (!user) throw new NotFoundError("Usuário não encontrado");
 
-  if (requesterId !== targetId && requesterRole !== 'ADMIN') {
-    throw new ForbiddenError('Sem permissão para alterar senha de outro usuário');
+  if (requesterId !== targetId && requesterRole !== "ADMIN") {
+    throw new ForbiddenError(
+      "Sem permissão para alterar senha de outro usuário",
+    );
   }
 
   if (requesterId === targetId) {
     const valid = await bcrypt.compare(currentPassword, user.password);
-    if (!valid) throw new ForbiddenError('Senha atual incorreta');
+    if (!valid) throw new ForbiddenError("Senha atual incorreta");
   }
 
   const hashed = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
-  await prisma.user.update({ where: { id: targetId }, data: { password: hashed } });
+  await prisma.user.update({
+    where: { id: targetId },
+    data: { password: hashed },
+  });
   await logAction(tenantId, requesterId, `CHANGE_PASSWORD:${targetId}`);
 }
