@@ -5,7 +5,7 @@ CREATE TYPE "PlanAssinatura" AS ENUM ('FREE', 'PRO', 'ENTERPRISE');
 CREATE TYPE "UserRole" AS ENUM ('ADMIN', 'EDITOR');
 
 -- CreateEnum
-CREATE TYPE "UploadStatus" AS ENUM ('PENDENTE', 'PROCESSADO', 'ERRO');
+CREATE TYPE "UploadStatus" AS ENUM ('PENDING', 'PROCESSING', 'AWAITING_MAPPING', 'DONE', 'ERROR');
 
 -- CreateTable
 CREATE TABLE "tenants" (
@@ -14,6 +14,7 @@ CREATE TABLE "tenants" (
     "cnpj" TEXT NOT NULL,
     "plano_assinatura" "PlanAssinatura" NOT NULL DEFAULT 'FREE',
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "tenants_pkey" PRIMARY KEY ("id")
 );
@@ -38,6 +39,7 @@ CREATE TABLE "branches" (
     "cidade" TEXT NOT NULL,
     "estado" TEXT NOT NULL,
     "meta_mensal" DECIMAL(15,2) NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "tenant_id" TEXT NOT NULL,
 
     CONSTRAINT "branches_pkey" PRIMARY KEY ("id")
@@ -47,10 +49,16 @@ CREATE TABLE "branches" (
 CREATE TABLE "raw_uploads" (
     "id" TEXT NOT NULL,
     "nome_arquivo" TEXT NOT NULL,
-    "data_upload" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "status" "UploadStatus" NOT NULL DEFAULT 'PENDENTE',
+    "nome_arquivo_original" TEXT NOT NULL,
+    "status" "UploadStatus" NOT NULL DEFAULT 'PENDING',
+    "suggested_mapping" JSONB,
+    "mapping" JSONB,
+    "error_message" TEXT,
+    "branch_id" TEXT,
     "user_id" TEXT NOT NULL,
     "tenant_id" TEXT NOT NULL,
+    "data_upload" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "raw_uploads_pkey" PRIMARY KEY ("id")
 );
@@ -62,7 +70,7 @@ CREATE TABLE "sales" (
     "data_venda" TIMESTAMP(3) NOT NULL,
     "valor_bruto" DECIMAL(15,2) NOT NULL,
     "custo_total" DECIMAL(15,2) NOT NULL,
-    "categoria" TEXT NOT NULL,
+    "categoria" TEXT,
     "produto_nome" TEXT NOT NULL,
     "quantidade" INTEGER NOT NULL,
     "branch_id" TEXT NOT NULL,
@@ -86,11 +94,24 @@ CREATE TABLE "daily_metrics" (
 );
 
 -- CreateTable
+CREATE TABLE "anomalies" (
+    "id" TEXT NOT NULL,
+    "sale_date" TIMESTAMP(3) NOT NULL,
+    "detected_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "desvio" DECIMAL(8,2) NOT NULL,
+    "hipotese" TEXT,
+    "branch_id" TEXT NOT NULL,
+    "tenant_id" TEXT NOT NULL,
+
+    CONSTRAINT "anomalies_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "audit_logs" (
     "id" TEXT NOT NULL,
-    "user_id" TEXT NOT NULL,
     "acao" TEXT NOT NULL,
     "timestamp" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "user_id" TEXT NOT NULL,
     "tenant_id" TEXT NOT NULL,
 
     CONSTRAINT "audit_logs_pkey" PRIMARY KEY ("id")
@@ -109,13 +130,25 @@ CREATE INDEX "sales_tenant_id_data_venda_idx" ON "sales"("tenant_id", "data_vend
 CREATE INDEX "sales_branch_id_data_venda_idx" ON "sales"("branch_id", "data_venda");
 
 -- CreateIndex
+CREATE INDEX "sales_produto_nome_idx" ON "sales"("produto_nome");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "sales_external_id_tenant_id_key" ON "sales"("external_id", "tenant_id");
 
 -- CreateIndex
 CREATE INDEX "daily_metrics_tenant_id_data_idx" ON "daily_metrics"("tenant_id", "data");
 
 -- CreateIndex
+CREATE INDEX "daily_metrics_branch_id_data_idx" ON "daily_metrics"("branch_id", "data");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "daily_metrics_data_branch_id_key" ON "daily_metrics"("data", "branch_id");
+
+-- CreateIndex
+CREATE INDEX "anomalies_tenant_id_detected_at_idx" ON "anomalies"("tenant_id", "detected_at");
+
+-- CreateIndex
+CREATE INDEX "anomalies_tenant_id_branch_id_idx" ON "anomalies"("tenant_id", "branch_id");
 
 -- CreateIndex
 CREATE INDEX "audit_logs_tenant_id_timestamp_idx" ON "audit_logs"("tenant_id", "timestamp");
@@ -133,6 +166,9 @@ ALTER TABLE "raw_uploads" ADD CONSTRAINT "raw_uploads_user_id_fkey" FOREIGN KEY 
 ALTER TABLE "raw_uploads" ADD CONSTRAINT "raw_uploads_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "raw_uploads" ADD CONSTRAINT "raw_uploads_branch_id_fkey" FOREIGN KEY ("branch_id") REFERENCES "branches"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "sales" ADD CONSTRAINT "sales_branch_id_fkey" FOREIGN KEY ("branch_id") REFERENCES "branches"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -143,6 +179,12 @@ ALTER TABLE "daily_metrics" ADD CONSTRAINT "daily_metrics_branch_id_fkey" FOREIG
 
 -- AddForeignKey
 ALTER TABLE "daily_metrics" ADD CONSTRAINT "daily_metrics_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "anomalies" ADD CONSTRAINT "anomalies_branch_id_fkey" FOREIGN KEY ("branch_id") REFERENCES "branches"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "anomalies" ADD CONSTRAINT "anomalies_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
