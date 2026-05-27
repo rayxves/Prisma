@@ -1,0 +1,129 @@
+.toolbar {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  margin-bottom: var(--spacing-md);
+}
+
+.filterField {
+  min-width: 180px;
+}
+
+.severityCell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.severityRowHigh {
+  background-color: color-mix(in srgb, var(--color-error) 8%, transparent) !important;
+}
+
+.severityRowMid {
+  background-color: color-mix(in srgb, #d97706 8%, transparent) !important;
+}
+
+.detailMeta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.detailLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+
+.detailValue {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.severityChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.severityHigh {
+  background-color: color-mix(in srgb, var(--color-error) 12%, transparent);
+  color: var(--color-error);
+}
+
+.severityMid {
+  background-color: color-mix(in srgb, #d97706 16%, transparent);
+  color: #d97706;
+}
+
+.severityLow {
+  background-color: color-mix(in srgb, var(--color-text-secondary) 12%, transparent);
+  color: var(--color-text-secondary);
+}
+
+.hypothesis {
+  border-left: 3px solid var(--color-primary);
+  padding: var(--spacing-md);
+  background-color: var(--color-surface-elevated);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-lg);
+  font-style: italic;
+}
+
+.crossroi {
+  margin-bottom: var(--spacing-lg);
+}
+
+.crossroiTitle {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-sm);
+  font-weight: 600;
+}
+
+.crossroiGrid {
+  display: grid;
+  gap: var(--spacing-xs);
+}
+
+.crossroiRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  padding: 8px 12px;
+  background-color: var(--color-surface-elevated);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+}
+
+.crossroiName {
+  color: var(--color-text-primary);
+}
+
+.crossroiValue {
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.sparkline {
+  margin-top: var(--spacing-sm);
+  width: 100%;
+  height: 80px;
+}

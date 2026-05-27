@@ -1,3 +1,6 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+
 import { Queue } from 'bullmq';
 
 import { env } from '../config/env';
@@ -90,4 +93,14 @@ export async function confirmMapping(
   });
 
   return { message: 'Mapeamento confirmado. Inserção dos dados iniciada.' };
+}
+
+export async function deleteUpload(tenantId: string, id: string) {
+  const upload = await prisma.rawUpload.findFirst({ where: { id, tenantId } });
+  if (!upload) throw new NotFoundError('Upload não encontrado');
+
+  const filePath = path.join(env.UPLOAD_DIR, upload.filename);
+  await fs.unlink(filePath).catch(() => {});
+
+  await prisma.rawUpload.delete({ where: { id } });
 }

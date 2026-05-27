@@ -51,3 +51,10 @@ export async function confirmMapping(req: Request, res: Response, next: NextFunc
     res.json(result);
   } catch (err) { next(err); }
 }
+
+export async function deleteUpload(req: Request, res: Response, next: NextFunction) {
+  try {
+    await UploadsService.deleteUpload(req.user!.tenantId, req.params['id'] as string);
+    res.status(204).send();
+  } catch (err) { next(err); }
+}

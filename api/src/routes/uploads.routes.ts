@@ -42,6 +42,7 @@ router.get('/',             UploadsController.list);
 router.get('/:id',          UploadsController.getById);
 router.get('/:id/mapping',  UploadsController.getMapping);
 router.post('/:id/mapping', validate(confirmMappingSchema), UploadsController.confirmMapping);
+router.delete('/:id',       UploadsController.deleteUpload);
 
 router.use((err: unknown, _req: Request, res: any, _next: any) => {
   if (err instanceof multer.MulterError || err instanceof Error) {

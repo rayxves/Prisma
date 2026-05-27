@@ -1,0 +1,9 @@
+.body {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  line-height: 1.55;
+}
+
+.body strong {
+  color: var(--color-text-primary);
+}

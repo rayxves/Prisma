@@ -1,0 +1,32 @@
+.shell {
+  min-height: 100vh;
+  background-color: var(--color-background);
+}
+
+.main {
+  padding-left: var(--sidebar-width);
+  transition: padding-left var(--transition-base);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.mainCollapsed {
+  padding-left: var(--sidebar-collapsed);
+}
+
+.content {
+  flex: 1;
+  padding: var(--spacing-xl);
+  max-width: 100%;
+}
+
+@media (max-width: 768px) {
+  .main,
+  .mainCollapsed {
+    padding-left: 0;
+  }
+  .content {
+    padding: var(--spacing-md);
+  }
+}

@@ -1,0 +1,75 @@
+.root {
+	position: relative;
+	display: inline-flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.label {
+	font-size: 12px;
+	font-weight: 500;
+	color: var(--color-text-secondary);
+	letter-spacing: 0.02em;
+}
+
+.trigger {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	height: 38px;
+	padding: 0 12px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-md);
+	background-color: var(--color-surface);
+	color: var(--color-text-primary);
+	font-size: 13px;
+	font-family: var(--font-mono);
+	cursor: pointer;
+	white-space: nowrap;
+	transition:
+		border-color var(--transition-fast),
+		box-shadow var(--transition-fast);
+}
+
+.trigger:hover {
+	border-color: var(--color-primary);
+}
+
+.trigger:focus-visible {
+	outline: none;
+	border-color: var(--color-primary);
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 20%, transparent);
+}
+
+.icon {
+	color: var(--color-text-muted);
+	flex-shrink: 0;
+}
+
+.placeholder {
+	color: var(--color-text-muted);
+}
+
+.popover {
+	position: absolute;
+	top: calc(100% + 6px);
+	left: 0;
+	z-index: 200;
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--shadow-lg);
+	padding: 8px;
+}
+
+.popover :global(.rdp-root) {
+	--rdp-accent-color: var(--color-primary);
+	--rdp-accent-background-color: color-mix(
+		in srgb,
+		var(--color-primary) 12%,
+		transparent
+	);
+	--rdp-today-color: var(--color-primary);
+	font-family: var(--font-sans);
+	font-size: 13px;
+}
