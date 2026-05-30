@@ -9,6 +9,7 @@ import type {
   UploadStatus,
 } from "../../../engine/application/contracts/upload-engine.contracts";
 import { prisma } from "../../../lib/prisma";
+import type { Prisma } from "@prisma/client";
 
 function toUploadRecord(upload: {
   id: string;
@@ -45,12 +46,13 @@ export function createPrismaUploadRepository(): UploadRepository {
     async saveSuggestedMapping(
       uploadId: string,
       suggestedMapping: SuggestedMapping,
+      columns: string[],
     ): Promise<void> {
       await prisma.rawUpload.update({
         where: { id: uploadId },
         data: {
           status: "AWAITING_MAPPING",
-          suggestedMapping: suggestedMapping,
+          suggestedMapping: { _columns: columns, ...suggestedMapping },
         },
       });
     },
@@ -61,7 +63,7 @@ export function createPrismaUploadRepository(): UploadRepository {
       model: BoostedModel,
       projections: SalesProjection[],
     ): Promise<void> {
-      const modelMetadata: Record<string, unknown> = {
+      const modelMetadata: Prisma.InputJsonObject = {
         ...mapping,
         _mlModel: {
           rmse: model.rmse,
@@ -69,7 +71,7 @@ export function createPrismaUploadRepository(): UploadRepository {
           featuresUsed: model.featuresUsed,
           trainedAt: model.trainedAt,
         },
-        _projections: projections.slice(0, 7),
+        _projections: projections.slice(0, 7) as unknown as Prisma.InputJsonValue[],
       };
 
       await prisma.rawUpload.update({

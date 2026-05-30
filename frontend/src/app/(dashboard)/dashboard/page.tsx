@@ -46,7 +46,7 @@ function getPeriodRange(period: Period): { from?: string; to?: string } {
 
 export default function DashboardPage() {
 	const { selectedBranchId } = useBranchFilter();
-	const [period, setPeriod] = useState<Period>("month");
+	const [period, setPeriod] = useState<Period>("year");
 
 	const [kpis, setKpis] = useState<KpiData | null>(null);
 	const [timeline, setTimeline] = useState<SalesTimelineData | null>(null);

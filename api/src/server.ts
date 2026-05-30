@@ -5,8 +5,7 @@ import { env } from "./config/env";
 import { logger } from "./config/logger";
 import { redis } from "./config/redis";
 import { prisma } from "./lib/prisma";
-import { startWorkers, closeWorkers } from "./workers/index";
-import { startUploadWorker } from "./workers/upload.worker";
+import { startUploadWorker } from "./workers/bootstrap/start-upload-worker";
 
 async function bootstrap() {
 	fs.mkdirSync(env.UPLOAD_DIR, { recursive: true });
@@ -19,7 +18,6 @@ async function bootstrap() {
 		process.exit(1);
 	}
 
-	startWorkers();
 	const worker = startUploadWorker();
 	logger.info("Engine de diagnóstico e predição iniciada (BullMQ)");
 
@@ -35,7 +33,6 @@ async function bootstrap() {
 		server.close(async () => {
 			logger.info("Servidor HTTP fechado");
 
-			await closeWorkers();
 			await prisma.$disconnect();
 			redis.disconnect();
 

@@ -55,14 +55,11 @@ function applyAnomalyCounts(
 }
 
 async function resolveBranchId(
-  mapping: Record<string, string>,
+  branchId: string | undefined,
   tenantId: string,
   branchRepository: BranchRepository,
 ): Promise<string> {
-  return (
-    (mapping["branch_id"] as string) ??
-    (await branchRepository.findOrCreateDefaultBranchId(tenantId))
-  );
+  return branchId ?? (await branchRepository.findOrCreateDefaultBranchId(tenantId));
 }
 
 export function createInsertUploadDataUseCase(
@@ -112,17 +109,22 @@ export function createInsertUploadDataUseCase(
     await progressReporter.update(INSERT_DATA_PROGRESS.cleaned);
 
     const branchId = await resolveBranchId(
-      input.mapping,
+      input.branchId,
       input.tenantId,
       dependencies.branchRepository,
     );
 
-    await dependencies.salesRepository.saveSales(
+    const insertedCount = await dependencies.salesRepository.saveSales(
       input.tenantId,
       branchId,
       cleanResult.rows,
     );
     await progressReporter.update(INSERT_DATA_PROGRESS.salesInserted);
+
+    if (insertedCount === 0) {
+      await dependencies.uploadRepository.updateStatus(input.uploadId, "DONE");
+      return { filePath: parsedUpload.filePath, anomalyCount: 0 };
+    }
 
     const diagnostics = computeDiagnostics(cleanResult.rows, branchId);
 

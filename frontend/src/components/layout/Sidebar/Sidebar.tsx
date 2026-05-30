@@ -17,6 +17,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { useAuth } from "@/hooks/useAuth";
 import { anomaliesService } from "@/services/anomalies.service";
+import { PrismaLogo } from "@/components/ui/PrismaLogo/PrismaLogo";
 import styles from "./Sidebar.module.css";
 
 interface NavItem {
@@ -58,36 +59,6 @@ export interface SidebarProps {
 	onMobileClose: () => void;
 }
 
-function PrismLogo() {
-	return (
-		<svg
-			width="20"
-			height="20"
-			viewBox="0 0 24 24"
-			fill="none"
-			xmlns="http://www.w3.org/2000/svg"
-			aria-hidden="true">
-			<path
-				d="M4 20 L12 4 L20 20 Z"
-				stroke="currentColor"
-				strokeWidth="1.6"
-				strokeLinejoin="round"
-			/>
-			<path
-				d="M4 20 L12 12 L20 20"
-				stroke="currentColor"
-				strokeWidth="1.6"
-				strokeLinejoin="round"
-			/>
-			<path
-				d="M12 4 L12 12"
-				stroke="currentColor"
-				strokeWidth="1.6"
-				strokeLinejoin="round"
-			/>
-		</svg>
-	);
-}
 
 function userInitials(name?: string) {
 	if (!name) return "?";
@@ -141,7 +112,7 @@ export function Sidebar({
 					.join(" ")}>
 				<div className={styles.brand}>
 					<div className={styles.brandLogo}>
-						<PrismLogo />
+						<PrismaLogo size={28} />
 					</div>
 					<div className={styles.brandText}>
 						<span className={styles.brandName}>PRISMA</span>

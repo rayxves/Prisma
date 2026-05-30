@@ -61,10 +61,15 @@ export async function getColumnMapping(tenantId: string, id: string) {
     throw new ValidationError(`Upload ainda não está pronto para mapeamento. Status atual: ${upload.status}`);
   }
 
+  const raw = (upload.suggestedMapping ?? {}) as Record<string, unknown>;
+  const detectedColumns = Array.isArray(raw['_columns']) ? (raw['_columns'] as string[]) : [];
+  const { _columns: _ignored, ...suggestedMapping } = raw;
+
   return {
     uploadId:         upload.id,
     originalName:     upload.originalName,
-    suggestedMapping: upload.suggestedMapping,
+    detectedColumns,
+    suggestedMapping: suggestedMapping as Record<string, string | null>,
   };
 }
 

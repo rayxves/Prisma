@@ -1,19 +1,24 @@
 import { prisma } from '../lib/prisma';
 import { NotFoundError } from '../shared/errors/app-error';
 
+function inferKind(hypothesis: string | null): string {
+  if (hypothesis?.toLowerCase().includes('unidades')) return 'Volume';
+  return 'Faturamento';
+}
+
 export async function listAnomalies(
   tenantId: string,
   filters: { branchId?: string; from?: Date; to?: Date }
 ) {
   const { branchId, from, to } = filters;
 
-  return prisma.anomaly.findMany({
+  const rows = await prisma.anomaly.findMany({
     where: {
       tenantId,
       ...(branchId && { branchId }),
       ...(from || to
         ? {
-            detectedAt: {
+            saleDate: {
               ...(from && { gte: from }),
               ...(to   && { lte: to }),
             },
@@ -27,10 +32,17 @@ export async function listAnomalies(
       saleDate:    true,
       hypothesis:  true,
       deviation:   true,
+      isCritical:  true,
       branch: { select: { name: true, city: true, state: true } },
     },
-    orderBy: { detectedAt: 'desc' },
+    orderBy: { saleDate: 'desc' },
   });
+
+  return rows.map(({ saleDate, ...rest }) => ({
+    ...rest,
+    date: saleDate,
+    kind: inferKind(rest.hypothesis),
+  }));
 }
 
 export async function getAnomalyById(tenantId: string, id: string) {
@@ -42,9 +54,10 @@ export async function getAnomalyById(tenantId: string, id: string) {
   });
   if (!anomaly) throw new NotFoundError('Anomalia não encontrada');
 
-  const saleDate   = anomaly.saleDate;
-  const dayStart   = new Date(saleDate);
-  const dayEnd     = new Date(saleDate);
+  const saleDate = anomaly.saleDate;
+  const dayStart = new Date(saleDate);
+  dayStart.setHours(0, 0, 0, 0);
+  const dayEnd   = new Date(saleDate);
   dayEnd.setHours(23, 59, 59, 999);
 
   const daySales = await prisma.sale.aggregate({
@@ -56,12 +69,15 @@ export async function getAnomalyById(tenantId: string, id: string) {
     _sum: { grossValue: true, totalCost: true },
   });
 
-  const revenue   = Number(daySales._sum.grossValue ?? 0);
-  const cost      = Number(daySales._sum.totalCost  ?? 0);
-  const roi       = cost > 0 ? ((revenue - cost) / cost) * 100 : 0;
+  const revenue = Number(daySales._sum.grossValue ?? 0);
+  const cost    = Number(daySales._sum.totalCost  ?? 0);
+  const roi     = cost > 0 ? ((revenue - cost) / cost) * 100 : 0;
 
+  const { saleDate: _sd, ...rest } = anomaly;
   return {
-    ...anomaly,
+    ...rest,
+    date:       saleDate,
+    kind:       inferKind(anomaly.hypothesis),
     crossedRoi: Number.parseFloat(roi.toFixed(2)),
   };
 }

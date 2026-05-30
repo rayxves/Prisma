@@ -193,14 +193,15 @@ export default function UploadsPage() {
 				const status = await uploadsService.getById(id);
 				if (status.status === "AWAITING_MAPPING") {
 					const data = await uploadsService.getMapping(id);
-					const suggestedMap = (data.suggestedMapping ?? {}) as Record<
-						string,
-						string
-					>;
-					setSuggested(suggestedMap);
-					setMapping(suggestedMap);
-					const cols = Array.from(new Set(Object.values(suggestedMap)));
-					setHeaders(cols);
+
+					const rawMap = (data.suggestedMapping ?? {}) as Record<string, string | null>;
+					const filteredMap = Object.fromEntries(
+						Object.entries(rawMap).filter(([, v]) => v !== null),
+					) as Record<string, string>;
+
+					setSuggested(filteredMap);
+					setMapping(filteredMap);
+					setHeaders(data.detectedColumns ?? Object.values(filteredMap));
 					setStep(2);
 					refreshList();
 					return;
@@ -238,7 +239,10 @@ export default function UploadsPage() {
 		}
 		setConfirming(true);
 		try {
-			await uploadsService.confirmMapping(uploadId, mapping, branchId);
+			const cleanMapping = Object.fromEntries(
+				Object.entries(mapping).filter(([, v]) => v),
+			);
+			await uploadsService.confirmMapping(uploadId, cleanMapping, branchId);
 			setStep(3);
 			pollForFinish(uploadId);
 		} catch (err) {

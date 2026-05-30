@@ -14,7 +14,7 @@ import type { User } from "@/types";
 interface AuthContextValue {
 	user: User | null;
 	loading: boolean;
-	login: (cnpj: string, email: string, password: string) => Promise<void>;
+	login: (email: string, password: string) => Promise<void>;
 	logout: () => void;
 	refreshUser: () => Promise<void>;
 }
@@ -74,12 +74,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	}, []);
 
 	const login = useCallback(
-		async (cnpj: string, email: string, password: string) => {
-			const { token, user: loggedUser } = await authService.login(
-				cnpj,
-				email,
-				password,
-			);
+		async (email: string, password: string) => {
+			const { token, user: loggedUser } = await authService.login(email, password);
 			setTokenCookie(token);
 			const fullUser: User = { ...loggedUser, tenantId: "" };
 			setUser(fullUser);

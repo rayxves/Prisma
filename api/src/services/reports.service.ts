@@ -83,7 +83,7 @@ export async function generatePdf(filters: ReportFilters, res: Response) {
     doc.text('Nenhuma anomalia detectada no período.');
   } else {
     anomalies.slice(0, 20).forEach((a: AnomalyItem) => {
-      const date = new Date(a.saleDate).toLocaleDateString('pt-BR');
+      const date = new Date(a.date).toLocaleDateString('pt-BR');
       const dev  = Number(a.deviation).toFixed(2);
       doc.text(`• [${date}] ${a.branch?.name ?? a.branchId}: ${a.hypothesis ?? 'Anomalia detectada'} (desvio: ${dev}%)`);
     });
@@ -150,7 +150,7 @@ export async function generateExcel(filters: ReportFilters, res: Response) {
   ];
   anomalies.forEach((a: AnomalyItem) =>
     anomSheet.addRow({
-      saleDate:   new Date(a.saleDate).toLocaleDateString('pt-BR'),
+      saleDate:   new Date(a.date).toLocaleDateString('pt-BR'),
       branchName: a.branch?.name ?? a.branchId,
       deviation:  Number(a.deviation).toFixed(2),
       hypothesis: a.hypothesis ?? '',

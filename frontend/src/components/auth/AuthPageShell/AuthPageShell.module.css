@@ -1,26 +1,17 @@
 .shell {
-	min-height: 100vh;
+	height: 100vh;
 	display: flex;
-	align-items: center;
-	justify-content: center;
-	background-color: var(--color-background);
-	padding: 32px 20px;
 }
 
 .page {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
 	width: 100%;
-	max-width: 1080px;
-	min-height: 640px;
-	border-radius: var(--radius-xl);
+	height: 100%;
 	overflow: hidden;
-	box-shadow:
-		0 24px 64px rgba(0, 0, 0, 0.18),
-		0 4px 16px rgba(0, 0, 0, 0.08);
 }
 
-.brandSide {
+.side {
 	position: relative;
 	background: linear-gradient(
 		140deg,
@@ -31,12 +22,21 @@
 	color: #ffffff;
 	display: flex;
 	flex-direction: column;
-	justify-content: space-between;
-	padding: 48px 56px;
+	justify-content: center;
+	align-items: center;
 	overflow: hidden;
 }
 
-.brandSide::before {
+.brandSide {
+	height: 100%;
+	max-width: 90%;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	padding: 2rem 0;
+}
+
+.side::before {
 	content: "";
 	position: absolute;
 	inset: 0;
@@ -54,7 +54,7 @@
 	pointer-events: none;
 }
 
-.brandSide::after {
+.side::after {
 	content: "";
 	position: absolute;
 	inset: 0;
@@ -81,15 +81,12 @@
 }
 
 .brandMark {
-	width: 42px;
-	height: 42px;
-	border-radius: 10px;
-	background: linear-gradient(135deg, #ffffff 0%, #86efac 100%);
+	width: 40px;
+	height: 48px;
 	display: flex;
-	align-items: center;
+	align-items: start;
 	justify-content: center;
-	color: var(--color-primary-dark);
-	box-shadow: 0 8px 24px rgba(20, 184, 166, 0.25);
+	flex-shrink: 0;
 }
 
 .brandName {
@@ -134,7 +131,7 @@
 
 .eyebrow {
 	font-family: var(--font-mono);
-	font-size: 12px;
+	font-size: 16px;
 	letter-spacing: 0.22em;
 	color: var(--color-success);
 	text-transform: uppercase;
@@ -143,7 +140,7 @@
 
 .headline {
 	font-family: var(--font-sans);
-	font-size: 46px;
+	font-size: 50px;
 	font-weight: 600;
 	line-height: 1.12;
 	letter-spacing: -0.02em;
@@ -159,7 +156,7 @@
 }
 
 .tagline {
-	font-size: 15px;
+	font-size: 18px;
 	line-height: 1.7;
 	color: rgba(255, 255, 255, 0.72);
 	max-width: 44ch;
@@ -274,8 +271,6 @@
 @media (max-width: 960px) {
 	.page {
 		grid-template-columns: 1fr;
-		max-width: 480px;
-		min-height: unset;
 	}
 
 	.brandSide {
@@ -284,24 +279,11 @@
 
 	.formSide {
 		padding: 48px 40px;
-		border-radius: var(--radius-xl);
 	}
 }
 
 @media (max-width: 540px) {
-	.shell {
-		padding: 0;
-		align-items: stretch;
-	}
-
-	.page {
-		max-width: unset;
-		border-radius: 0;
-		box-shadow: none;
-	}
-
 	.formSide {
 		padding: 40px 24px;
-		border-radius: 0;
 	}
 }

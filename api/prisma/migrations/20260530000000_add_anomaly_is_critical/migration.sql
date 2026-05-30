@@ -1,0 +1,1 @@
+ALTER TABLE "anomalies" ADD COLUMN IF NOT EXISTS "is_critical" BOOLEAN NOT NULL DEFAULT false;

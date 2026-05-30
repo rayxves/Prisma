@@ -219,7 +219,8 @@ export async function getProjection({ tenantId, branchId }: DashboardFilters) {
   const sumXY = xs.reduce((acc, x, i) => acc + x * (ys[i] ?? 0), 0);
   const sumX2 = xs.reduce((acc, x) => acc + x * x, 0);
 
-  const b = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+  const denominator = n * sumX2 - sumX * sumX;
+  const b = denominator !== 0 ? (n * sumXY - sumX * sumY) / denominator : 0;
   const a = (sumY - b * sumX) / n;
 
   const projected    = a + b * daysInMonth;

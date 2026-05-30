@@ -5,4 +5,5 @@ export type UploadJobData = {
 
 export type InsertDataJobData = UploadJobData & {
   mapping: Record<string, string>;
+  branchId: string;
 };

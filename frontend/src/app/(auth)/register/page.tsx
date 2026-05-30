@@ -82,7 +82,7 @@ export default function RegisterPage() {
 				password,
 			});
 			toast.success("Conta criada com sucesso. Entrando...");
-			await login(rawCnpj, normalizedEmail, password);
+			await login(normalizedEmail, password);
 			router.push("/dashboard");
 			router.refresh();
 		} catch (err) {

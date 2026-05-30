@@ -53,7 +53,6 @@ export const registerSchema = z.object({
 });
 
 export const loginSchema = z.object({
-	cnpj: cnpjSchema,
 	email: z.email("E-mail inválido").transform((v) => v.toLowerCase().trim()),
 	password: z.string().min(1, "Senha obrigatória").max(72),
 });

@@ -110,7 +110,7 @@ model Sale {
   branch      Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
   tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  @@unique([externalId, tenantId])
+  @@unique([externalId, tenantId, branchId])
   @@index([tenantId, saleDate])
   @@index([branchId, saleDate])
   @@index([productName])

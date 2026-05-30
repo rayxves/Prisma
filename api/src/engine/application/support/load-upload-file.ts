@@ -14,11 +14,10 @@ export async function readUploadFileOrMarkError(
   try {
     return await uploadFileGateway.readUpload(filename);
   } catch (error) {
+    await uploadRepository.updateStatus(uploadId, "ERROR");
     if (error instanceof UploadFileNotFoundError) {
-      await uploadRepository.updateStatus(uploadId, "ERROR");
       throw new Error(`Arquivo não encontrado: ${error.filePath}`);
     }
-
     throw error;
   }
 }

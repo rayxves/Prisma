@@ -14,12 +14,8 @@ export interface RegisterResponse {
 	userId: string;
 }
 export const authService = {
-	login(cnpj: string, email: string, password: string) {
-		return api.post<LoginResponse>("/api/auth/login", {
-			cnpj,
-			email,
-			password,
-		});
+	login(email: string, password: string) {
+		return api.post<LoginResponse>("/api/auth/login", { email, password });
 	},
 	me() {
 		return api.get<User>("/api/auth/me");

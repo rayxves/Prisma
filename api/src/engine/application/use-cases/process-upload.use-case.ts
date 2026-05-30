@@ -52,6 +52,7 @@ export function createProcessUploadUseCase(
     await dependencies.uploadRepository.saveSuggestedMapping(
       input.uploadId,
       suggestedMapping,
+      parsedUpload.columns,
     );
     await progressReporter.update(PROCESS_UPLOAD_COMPLETED_PROGRESS);
 

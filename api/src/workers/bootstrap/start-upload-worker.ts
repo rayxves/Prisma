@@ -17,6 +17,7 @@ import {
   createWorkerLogger,
   type UploadWorkerLogger,
 } from "../utils/worker-logger";
+import { prisma } from "../../lib/prisma";
 
 const UPLOAD_QUEUE_NAME = "uploads";
 
@@ -81,6 +82,12 @@ async function routeUploadJob(
   }
 }
 
+function toUserMessage(error: Error): string {
+  const msg = error.message;
+  const firstLine = msg.split("\n")[0]?.trim() ?? msg;
+  return firstLine.length > 200 ? `${firstLine.slice(0, 200)}…` : firstLine;
+}
+
 function attachWorkerEventLogging(
   worker: Worker,
   logger: UploadWorkerLogger,
@@ -91,6 +98,16 @@ function attachWorkerEventLogging(
 
   worker.on("failed", (job, error) => {
     logger.logWorkerFailed(job, error);
+
+    const uploadId = (job?.data as { uploadId?: string })?.uploadId;
+    if (uploadId) {
+      prisma.rawUpload
+        .update({
+          where: { id: uploadId },
+          data: { status: "ERROR", errorMessage: toUserMessage(error) },
+        })
+        .catch(() => {});
+    }
   });
 
   worker.on("stalled", (jobId) => {

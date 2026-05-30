@@ -26,11 +26,12 @@ export function createPrismaSalesRepository(): SalesRepository {
       tenantId: string,
       branchId: string,
       rows: CleanRow[],
-    ): Promise<void> {
-      await prisma.sale.createMany({
+    ): Promise<number> {
+      const result = await prisma.sale.createMany({
         data: createSalesPayload(tenantId, branchId, rows),
         skipDuplicates: true,
       });
+      return result.count;
     },
   };
 }

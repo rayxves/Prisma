@@ -41,6 +41,7 @@ export function createInsertUploadDataJobHandler(
         uploadId: job.data.uploadId,
         tenantId: job.data.tenantId,
         mapping: job.data.mapping,
+        branchId: job.data.branchId,
       },
       createRuntime(job, dependencies.logger),
     );

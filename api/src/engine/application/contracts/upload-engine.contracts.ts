@@ -30,6 +30,7 @@ export interface UploadRepository {
   saveSuggestedMapping(
     uploadId: string,
     suggestedMapping: SuggestedMapping,
+    columns: string[],
   ): Promise<void>;
   saveModelMetadata(
     uploadId: string,
@@ -53,7 +54,7 @@ export interface SalesRepository {
     tenantId: string,
     branchId: string,
     rows: CleanRow[],
-  ): Promise<void>;
+  ): Promise<number>;
 }
 
 export interface AnomalyRepository {
@@ -118,6 +119,7 @@ export interface InsertUploadDataInput {
   uploadId: string;
   tenantId: string;
   mapping: Record<string, string>;
+  branchId?: string;
 }
 
 export interface InsertUploadDataResult {

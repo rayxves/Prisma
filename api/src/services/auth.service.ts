@@ -20,7 +20,6 @@ interface RegisterInput {
 interface LoginInput {
   email:    string;
   password: string;
-  cnpj:     string;
 }
 
 export async function register({ companyName, cnpj, adminName, email, password }: RegisterInput) {
@@ -52,12 +51,9 @@ export async function register({ companyName, cnpj, adminName, email, password }
   return { tenantId: tenant.id, userId: user.id };
 }
 
-export async function login({ email, password, cnpj }: LoginInput) {
-  const tenant = await prisma.tenant.findUnique({ where: { cnpj } });
-  if (!tenant) throw new UnauthorizedError('Credenciais inválidas');
-
-  const user = await prisma.user.findUnique({
-    where: { email_tenantId: { email, tenantId: tenant.id } },
+export async function login({ email, password }: LoginInput) {
+  const user = await prisma.user.findFirst({
+    where: { email },
   });
   if (!user) throw new UnauthorizedError('Credenciais inválidas');
 

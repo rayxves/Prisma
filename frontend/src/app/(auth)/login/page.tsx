@@ -7,16 +7,13 @@ import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { Input } from "@/components/ui/Input/Input";
 import { Button } from "@/components/ui/Button/Button";
-import { MaskedInput } from "@/components/forms/MaskedInput/MaskedInput";
 import { AuthPageShell } from "@/components/auth/AuthPageShell/AuthPageShell";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/useToast";
-import { unmaskCNPJ } from "@/services/format";
 import Link from "next/link";
 import styles from "./login.module.css";
 
 interface FormErrors {
-	cnpj?: string;
 	email?: string;
 	password?: string;
 }
@@ -26,7 +23,6 @@ export default function LoginPage() {
 	const { login } = useAuth();
 	const toast = useToast();
 
-	const [cnpj, setCnpj] = useState("");
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [showPassword, setShowPassword] = useState(false);
@@ -35,8 +31,6 @@ export default function LoginPage() {
 
 	function validate(): boolean {
 		const next: FormErrors = {};
-		const rawCnpj = unmaskCNPJ(cnpj);
-		if (rawCnpj.length !== 14) next.cnpj = "CNPJ deve ter 14 dígitos";
 		if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
 			next.email = "E-mail inválido";
 		if (password.length < 1) next.password = "Senha obrigatória";
@@ -49,7 +43,7 @@ export default function LoginPage() {
 		if (!validate()) return;
 		setLoading(true);
 		try {
-			await login(unmaskCNPJ(cnpj), email.toLowerCase().trim(), password);
+			await login(email.toLowerCase().trim(), password);
 			toast.success("Bem-vindo de volta");
 			router.push("/dashboard");
 			router.refresh();
@@ -76,20 +70,11 @@ export default function LoginPage() {
 			}}
 			formEyebrow="Acesso"
 			formTitle="Entrar na plataforma"
-			formSubtitle="Use o CNPJ da sua empresa e suas credenciais de acesso.">
+			formSubtitle="Use suas credenciais de acesso.">
 			<form
 				className={styles.form}
 				onSubmit={handleSubmit}
 				noValidate>
-				<MaskedInput
-					label="CNPJ"
-					required
-					placeholder="00.000.000/0000-00"
-					value={cnpj}
-					onChange={(formatted) => setCnpj(formatted)}
-					error={errors.cnpj}
-					autoComplete="organization"
-				/>
 				<Input
 					label="E-mail"
 					required
